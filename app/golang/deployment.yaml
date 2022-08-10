@@ -1,0 +1,24 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-go
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: httpd-go
+  template:
+    metadata:
+      labels:
+        app: httpd-go
+    spec:
+      containers:
+      - name: httpd-go
+        image: localhost:32000/httpd-go:registry
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "128m"
+        ports:
+        - containerPort: 8080
