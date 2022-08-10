@@ -1,0 +1,80 @@
+# https://microk8s.io/docs/getting-started
+# https://microk8s.io/docs/addon-dashboard
+# https://microk8s.io/docs/registry-built-in
+# https://ubuntu.com/blog/deploying-kubernetes-locally-microk8s
+# https://medium.com/manikkothu/build-and-deploy-apps-on-microk8s-1df26d1ddd3c
+
+$ microk8s add-node
+
+# PART 1
+
+$ sudo usermod -a -G microk8s vagrant && sudo chown -f -R vagrant ~/.kube
+
+$ microk8s start
+
+$ microk8s enable dns 
+
+$ microk8s enable dashboard
+
+$ microk8s kubectl create token -n kube-system default --duration=8544h
+
+$ microk8s kubectl port-forward --address 0.0.0.0 -n kube-system service/kubernetes-dashboard 10443:443
+
+$ microk8s kubectl create deployment nginx --image=nginx
+
+$ microk8s kubectl port-forward --address 0.0.0.0 deployment/nginx 8080:80
+
+$ microk8s kubectl get all --all-namespaces
+
+# PART 2
+
+$ docker build . -t httpd-go
+
+$ docker images
+
+$ docker run -p 8080:8080 -t httpd-go
+
+$ microk8s status --wait-ready
+
+$ microk8s enable registry
+
+$ docker build . -t localhost:32000/httpd-go:registry
+
+$ docker images
+
+$ docker tag 8c52347387e5 localhost:32000/httpd-go:registry
+
+$ docker push localhost:32000/httpd-go:registry
+
+$ docker build . -t 192.168.50.10:32000/httpd-go:registry
+
+$ docker tag 8c52347387e5 192.168.50.10:32000/httpd-go:registry
+
+$ docker push 192.168.50.10:32000/httpd-go:registry
+
+$ touch /etc/docker/daemon.json
+{
+  "insecure-registries" : ["192.168.50.10:32000"]
+}
+
+$ sudo systemctl stop docker && sudo systemctl stop docker
+
+$ k apply -f deployment.yaml
+
+$ k expose deployment httpd-go --type=NodePort --port=8080 --name=svc-httpd-go
+
+$ k get deployment | pods | svc
+
+$ k get all --all-namespaces
+
+$ k get service svc-httpd-go --output='jsonpath="{.spec.ports[0].nodePort}"'
+
+$ k port-forward --address 0.0.0.0 service/svc-httpd-go 30000:8080 # not on NodePort but ContainerPort
+
+$ k scale deployment httpd-go --replicas=2
+
+$ microk8s enable | disable ingress
+
+$ kubectl get pods --namespace=ingress-nginx
+
+$ k apply -f 
